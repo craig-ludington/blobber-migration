@@ -11,8 +11,6 @@ module Migrate
   end
 
   def self.migrate(conn, blob_client, limit)
-
-
     x = conn.exec( 'BEGIN TRANSACTION;')
 
     time('create temp table') do
@@ -40,20 +38,26 @@ module Migrate
         key  = blob_client.post(blob)
       end # time
 
+      if cfg['delete_after_post']
+        optional_delete_after_post_clause = ', contract_text = NULL'
+      end
+
       q = "UPDATE loan_contracts
-           SET    contract_text_guuid = '#{key}', 
-                  contract_text = NULL
+           SET    contract_text_guuid = '#{key}' #{optional_delete_after_post_clause}
            WHERE  id = #{id}"
+
       time("update") do
         conn.exec(q)
       end # time
 
-      time('fetch/compare') do
-        fetched = blob_client.get(key)
-        File.open("/tmp/blob-db",      "wb") { |f| f.write(blob)}
-        File.open("/tmp/blob-blobber", "wb") { |f| f.write(fetched)}
-        raise 'mismatch' unless system("cmp /tmp/blob-db /tmp/blob-blobber") 
-      end # time
+      if cfg['verify'] 
+        time('fetch/compare') do
+          fetched = blob_client.get(key)
+          File.open("/tmp/blob-db",      "wb") { |f| f.write(blob)}
+          File.open("/tmp/blob-blobber", "wb") { |f| f.write(fetched)}
+          raise 'mismatch' unless system("cmp /tmp/blob-db /tmp/blob-blobber") 
+        end # time
+      end
     end # x.each
 
   conn.exec( "COMMIT")
@@ -89,8 +93,15 @@ if ARGV[0]
    'iterations',
    'limit',
    'pause',
-    'url' ].each { |param| raise "Configuration file '#{ARGV[0]}' is missing parameter '#{param}'" unless config[param] }
+   'url',
+   'delete_after_post'].each { |param| raise "Configuration file '#{ARGV[0]}' is missing parameter '#{param}'" unless config[param] }
+
+  if config['delete_after_post'] && (! config['verify'])
+    raise 'delete_after_post is true yet verify is false -- cowardly refusing to proceed'
+  end
+
   Migrate::main(config)
 else
+
   abort("usage: ruby migrate.rb config.yml")
 end

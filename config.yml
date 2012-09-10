@@ -1,12 +1,26 @@
+# Source database credentials
 host: 'qassdb-06-nut.cashnetusa.com'
 port: 5432
 dbname: 'cnuapp_prod_uk'
 user: 'postgres'
 password: 'cnuappukqa'
 
+# Number of times to run the migration (for ``limit'' rows)
 iterations: 10
+
+# Number of rows to migrate in a transaction
 limit: 500
+
+# Seconds to wait between iteration
 pause: 60
+
+# Url for the Blobber
 url: 'https://blobsuat.cashnetusa.com/blobber_v1'
 
+# Boolean for in-line verification of each POSTed blob
+# (does a GET from Blobber and compares that with the value from the database)
+verify: false
 
+# Boolean for *DESTRUCTIVE* update of cnu.loan_contracts.
+# If true, cnu.loan_contracts.contract_text is set to NULL
+delete_after_post: false
