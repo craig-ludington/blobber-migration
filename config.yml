@@ -1,0 +1,12 @@
+host: 'qassdb-06-nut.cashnetusa.com'
+port: 5432
+dbname: 'cnuapp_prod_uk'
+user: 'postgres'
+password: 'cnuappukqa'
+
+iterations: 10
+limit: 500
+pause: 60
+url: 'https://blobsuat.cashnetusa.com/blobber_v1'
+
+
